@@ -569,15 +569,7 @@ func (gui *Gui) setControllers() {
 	gui.fileHelper = NewFileHelper(controllerCommon, gui.git, osCommand)
 	gui.workingTreeHelper = NewWorkingTreeHelper(func() *filetree.FileTreeViewModel { return gui.State.FileTreeViewModel })
 
-	tagsController := controllers.NewTagsController(
-		controllerCommon,
-		func() *context.TagsContext { return gui.State.Contexts.Tags },
-		gui.git,
-		getContexts,
-		refHelper,
-		gui.suggestionsHelper,
-		gui.switchToSubCommitsContext,
-	)
+	tagActions := controllers.NewTagActions(controllerCommon, gui.git)
 
 	syncController := controllers.NewSyncController(
 		controllerCommon,
@@ -617,20 +609,28 @@ func (gui *Gui) setControllers() {
 			gui.fileHelper,
 			gui.workingTreeHelper,
 		),
-		Tags: tagsController,
-
+		Tags: controllers.NewTagsController(
+			controllerCommon,
+			func() *context.TagsContext { return gui.State.Contexts.Tags },
+			gui.git,
+			getContexts,
+			tagActions,
+			refHelper,
+			gui.suggestionsHelper,
+			gui.switchToSubCommitsContext,
+		),
 		LocalCommits: controllers.NewLocalCommitsController(
 			controllerCommon,
 			func() types.IListContext { return gui.State.Contexts.BranchCommits },
 			osCommand,
 			gui.git,
+			tagActions,
 			refHelper,
 			gui.getSelectedLocalCommit,
 			func() []*models.Commit { return gui.State.Commits },
 			func() int { return gui.State.Panels.Commits.SelectedLineIdx },
 			gui.checkMergeOrRebase,
 			syncController.HandlePull,
-			tagsController.CreateTagMenu,
 			gui.getHostingServiceMgr,
 			gui.SwitchToCommitFilesContext,
 			gui.handleOpenSearch,
@@ -639,7 +639,6 @@ func (gui *Gui) setControllers() {
 			func() bool { return gui.ShowWholeGitGraph },
 			func(value bool) { gui.ShowWholeGitGraph = value },
 		),
-
 		Remotes: controllers.NewRemotesController(
 			controllerCommon,
 			func() types.IListContext { return gui.State.Contexts.Remotes },
