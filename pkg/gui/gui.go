@@ -143,9 +143,9 @@ type Gui struct {
 	PrevLayout PrevLayout
 
 	c                 *types.ControllerCommon
-	refHelper         *RefHelper
+	refsHelper        *RefsHelper
 	suggestionsHelper *SuggestionsHelper
-	fileHelper        *FileHelper
+	filesHelper       *FilesHelper
 	workingTreeHelper *WorkingTreeHelper
 }
 
@@ -559,17 +559,17 @@ func (gui *Gui) setControllers() {
 	getState := func() *GuiRepoState { return gui.State }
 	getContexts := func() context.ContextTree { return gui.State.Contexts }
 	// TODO: have a getGit function too
-	refHelper := NewRefHelper(
+	refsHelper := NewRefsHelper(
 		controllerCommon,
 		gui.git,
 		getState,
 	)
-	gui.refHelper = refHelper
+	gui.refsHelper = refsHelper
 	gui.suggestionsHelper = NewSuggestionsHelper(controllerCommon, getState, gui.refreshSuggestions)
-	gui.fileHelper = NewFileHelper(controllerCommon, gui.git, osCommand)
+	gui.filesHelper = NewFilesHelper(controllerCommon, gui.git, osCommand)
 	gui.workingTreeHelper = NewWorkingTreeHelper(func() *filetree.FileTreeViewModel { return gui.State.FileTreeViewModel })
 
-	tagActions := controllers.NewTagActions(controllerCommon, gui.git)
+	tagsHelper := controllers.NewTagsHelper(controllerCommon, gui.git)
 
 	syncController := controllers.NewSyncController(
 		controllerCommon,
@@ -605,8 +605,8 @@ func (gui *Gui) setControllers() {
 			gui.getSelectedPath,
 			gui.switchToMerge,
 			gui.suggestionsHelper,
-			gui.refHelper,
-			gui.fileHelper,
+			gui.refsHelper,
+			gui.filesHelper,
 			gui.workingTreeHelper,
 		),
 		Tags: controllers.NewTagsController(
@@ -614,8 +614,8 @@ func (gui *Gui) setControllers() {
 			func() *context.TagsContext { return gui.State.Contexts.Tags },
 			gui.git,
 			getContexts,
-			tagActions,
-			refHelper,
+			tagsHelper,
+			refsHelper,
 			gui.suggestionsHelper,
 			gui.switchToSubCommitsContext,
 		),
@@ -624,8 +624,8 @@ func (gui *Gui) setControllers() {
 			func() types.IListContext { return gui.State.Contexts.BranchCommits },
 			osCommand,
 			gui.git,
-			tagActions,
-			refHelper,
+			tagsHelper,
+			refsHelper,
 			gui.getSelectedLocalCommit,
 			func() []*models.Commit { return gui.State.Commits },
 			func() int { return gui.State.Panels.Commits.SelectedLineIdx },
@@ -662,7 +662,7 @@ func (gui *Gui) setControllers() {
 		Undo: controllers.NewUndoController(
 			controllerCommon,
 			gui.git,
-			refHelper,
+			refsHelper,
 			gui.workingTreeHelper,
 			func() []*models.Commit { return gui.State.FilteredReflogCommits },
 		),
